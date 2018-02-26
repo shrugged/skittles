@@ -6,8 +6,10 @@ import argparse
 from unipath import Path
 #from wfuzz.fuzzobjects import FuzzResult
 import sys
+import os
 
-AQUATONE_ROOT = Path("~/aquatone").expand_user()
+AQUATONE_ROOT = Path(os.getenv('AQUATONEPATH', "~/aquatone")).expand_user()
+print("Using Aquatone Path : %s", AQUATONE_ROOT)
 
 parser = argparse.ArgumentParser(description='Bruteforce webservers')
 parser.add_argument('-d','--domain', required='True')
@@ -17,6 +19,8 @@ parser.add_argument('-o', '--output')
 parser.add_argument('-r', '--robots')
 parser.add_argument('--debug',action='store_true')
 parser.add_argument('-v', '--verbose',action='store_true')
+parser.add_argument('--blacklist')
+parser.add_argument('--whitelist')
 
 options = parser.parse_args()
 results = {}
@@ -80,8 +84,8 @@ with open("hosts.json") as h:
     while count < len(hosts):
         host = hosts[count]
         print("Starting url: %s", host)
-        fs = wfuzz.FuzzSession(hc=['404','429'],hh=['BBB'],payloads=[("file",dict(fn=str(wordlist)))], scanmode=True,rleve=2,script='robots')
-        results[host] = scan_url(fs, "https://"+host+payload)
+        fs = wfuzz.FuzzSession(hc=['404','429','503'],hh=['BBB'],payloads=[("file",dict(fn=str(wordlist)))], scanmode=True,rleve=2,script='robots')
+        results[host] = scan_url(fs, "http://"+host+payload)
         print("Number of results: %d", len(results[host]))
         count = count +1
 
