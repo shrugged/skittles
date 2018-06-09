@@ -9,6 +9,9 @@ import sys
 from urlparse import urlparse
 from wt_utils import *
 import wfuzz
+import requests.exceptions
+import simplejson
+
 URL = "http://web.archive.org/cdx/search/cdx?url=%s/*&output=json&fl=original,statuscode&collapse=urlkey"
 
 parser = argparse.ArgumentParser(description='Bruteforce webservers')
@@ -66,11 +69,14 @@ def get_wayback(report_dir, host):
 	if "Blocked By Robots" in r.text:
 		return 0
 
-	if len(r.json()) > 0:
-		h = write_host_results(report_dir, host, r.json())
-		return h
-	else:
-		return 0
+	try:
+		if len(r.json()) > 0:
+			h = write_host_results(report_dir, host, r.json())
+			return h
+		else:
+			return 0
+	except simplejson.scanner.JSONDecodeError:
+		pass
 
 def main():
 	go_home(args.domain)
@@ -79,8 +85,8 @@ def main():
 	#hosts = read_hosts("hosts.json")
 	#hosts = read_hosts2("subfinder.json")
 	#hosts = read_hosts4("subfinder-18-05-23.txt")
-	hosts = read_hosts4("test2.txt")
-	#hosts = read_hosts3("massdns-18-05-24.txt")
+	hosts = read_hosts4("subfinder-18-06-07.txt")
+	#hosts = read_hosts3("massdns-18-06-03.txt")
 
 	if args.whitelist:
 	    hosts = whitelist_hosts(hosts, whitelist)
@@ -107,12 +113,19 @@ def main():
 				#print("Print brute forcing %d results.", w)
 				bf = brute_force(input_file)
 			else:
-				w = get_wayback(report_dir, host)
+				w = 0
+				try:
+					w = get_wayback(report_dir, host)
+				except requests.exceptions.ConnectionError:
+					pass
 				print("Found %d results in wayback.", w)
 
 				if w > 0 and args.bruteforce:
 					print("Brute forcing %d results.", w)
-					bf = brute_force(input_file)
+					try:
+						bf = brute_force(input_file)
+					except (simplejson.scanner.JSONDecodeError, wfuzz.exception.FuzzExceptBadFile):
+						pass
 
 		except KeyboardInterrupt:
 			print("CTRL+C detected.")

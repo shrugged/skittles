@@ -10,9 +10,17 @@ import httplib, sys
 import socket
 import re
 import  requests.exceptions
+from google.cloud import storage
+from google.api_core import exceptions
 
 AQUATONE_ROOT = Path(os.getenv('AQUATONEPATH', "~/aquatone")).expand_user()
 
+def get_alteration_words(wordlist):
+    words = []
+    for word in wordlist:
+        words.append(word.strip())
+    return words
+    
 def check_url(url):
     try:
         url = urlparse(url)
@@ -52,6 +60,7 @@ def read_hosts3(filename):
     hosts = []
     if os.path.isfile(filename):
         with open(filename) as content:
+            print(content)
             for line in content:
                 hosts.append(line.split(". ")[0])
 
@@ -110,3 +119,26 @@ def usage(errmsg):
     print("Usage: python %s [Options] use -h for help" % sys.argv[0])
     print("Error: %s" % errmsg)
     sys.exit(1)
+
+def list_bucket(bucket_name):
+    l = []
+    """Lists all the blobs in the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name.lower())
+
+    blobs = bucket.list_blobs()
+
+    for blob in blobs:
+        l.append(blob.name+"\n")
+
+    return l
+
+def report_files_buckets(name):
+    path = os.path.expanduser('~/lazy')
+    l = list_bucket(name)
+    if l:
+        with open(path + "/"+name, "w") as wp:
+            wp.writelines(l)
+            print("Number of files: %d", len(l))
+    else:
+        pass

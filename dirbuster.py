@@ -98,8 +98,11 @@ def write_raw_content(report_dir, host, filename, content):
     f.write_file(content, mode="w")
 
 def filter_url(baseline, prev, res):
-    fuzzy_bbb = fuzz.ratio(res.history.raw_content, baseline.history.raw_content)
-    fuzzy_prev = fuzz.ratio(res.history.raw_content, prev.history.raw_content)
+    if res.history and baseline.history:
+        fuzzy_bbb = fuzz.ratio(res.history.raw_content, baseline.history.raw_content)
+        fuzzy_prev = fuzz.ratio(res.history.raw_content, prev.history.raw_content)
+    else:
+        return True
 
     if res.is_baseline:
         return False
@@ -166,8 +169,8 @@ def main():
 
     #hosts = read_hosts("hosts.json")
     #hosts = read_hosts2("subfinder.json")
-    #hosts = read_hosts3("massdns-18-05-26.txt")
-    hosts = read_hosts4("subfinder.txt")
+    #hosts = read_hosts3("massdns-18-06-03.txt")
+    hosts = read_hosts4("sublist3r.txt")
 
     print("Brute forcing for domain: %s", options.domain)
     print("Number(s) of url: %d",len(hosts))

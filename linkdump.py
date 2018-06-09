@@ -191,8 +191,10 @@ def main():
     go_home(args.domain)
     report_dir = setup_report_dir("linkdump")
 
-    hosts = read_hosts("hosts.json")
+    
+    #hosts = read_hosts("hosts.json")
     #hosts = read_hosts2("subfinder.json")
+    hosts = read_hosts3("massdns-18-06-03.txt")
 
     print("Using Report Path : %s", report_dir.absolute())
     print("Link Dump for domain: %s", args.domain)

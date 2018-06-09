@@ -19,7 +19,8 @@ parser = argparse.ArgumentParser(description='Bruteforce webservers')
 parser.add_argument('--domain', required='True')
 parser.add_argument('--blacklist',action='append')
 parser.add_argument('--whitelist',action='append')
-parser.add_argument('--list-files', action='store_true', default=False)
+parser.add_argument('--list-files', action='store_true', default=True)
+parser.add_argument('--list-perms', action='store_true', default=True)
 
 args = parser.parse_args()
 
@@ -41,60 +42,45 @@ def brute_force(input_file):
                 results.append(r.description)
             elif r.code == 400:
                 print(colored(r.description, "yellow"))
-                #results.append(r.description)
+                results.append(r.description)
+
+            if args.list_perms and r.code != 404:            
+                 t = requests.get("https://content.googleapis.com/storage/v1/b/" + r.description + 
+                    "/iam/testPermissions?permissions=storage.objects.get&permissions=storage.buckets.delete" + 
+                    "&permissions=storage.buckets.getIamPolicy&permissions=storage.buckets.setIamPolicy&permissions=storage.buckets.update" + 
+                    "&permissions=storage.objects.delete&permissions=storage.objects.getIamPolicy&permissions=storage.objects.create" +
+                    "&permissions=storage.objects.list&permissions=storage.objects.setIamPolicy&permissions=storage.objects.update")
+                 if t.status_code == 200:
+                    perms = t.json().get("permissions")
+                    if perms:
+                        for perm in perms:
+                            print(perm)
 
             if r.code != 400 and r.code != -1:
             	if args.list_files:
-	                try:
-	                    report_files_buckets(r.description)
-	                except KeyboardInterrupt:
-	                	pass
-	                except Exception, e:
-	                    print("Error listing files: " + str(e))
+            		try:
+            			report_files_buckets(r.description)
+                	except (exceptions.Forbidden, exceptions.NotFound, KeyboardInterrupt), e:
+                		pass
 
     print("Took %d seconds.", int(sess.stats.totaltime))
     return results
-
-def list_bucket(bucket_name):
-    l = []
-    """Lists all the blobs in the bucket."""
-    storage_client = storage.Client()
-    # lowercase because it doesn't work otherwise
-    for bl in BLACKLIST:
-    	if bl in bucket_name:
-    		bucket_name = bucket_name.replace(bl, '')
-
-    bucket = storage_client.get_bucket(bucket_name.lower())
-
-    blobs = bucket.list_blobs()
-    for blob in blobs:
-    	try:
-        	l.append(str(blob.name.encode('utf-8'))+"\n")
-        except UnicodeEncodeError:
-        	pass
-
-    return l
-
-def report_files_buckets(name):
-    path = os.path.expanduser('~/lazy')
-    l = list_bucket(name)
-    if l:
-        with open(path + "/"+name, "w") as wp:
-            wp.writelines(l)
-        print("Number of files: %d", len(l))
 
 # starting with . is illegal name
 def filter_hosts(hosts):
 	return [elem for elem in hosts if not elem[0] == '.' or elem[0] == '_']
 
 def main():
-	#print(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
+	print(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
 	go_home(args.domain)
 	print("Using domain: %s", args.domain)
 
 	#hosts = read_hosts("hosts.json")
 	#hosts = read_hosts2("subfinder.json")
-	hosts = read_hosts4("subfinder-18-05-29.txt")
+	#hosts = read_hosts4("subfinder.txt")
+	hosts = read_hosts4("subfinder-18-06-01.txt")
+	#hosts = read_hosts4("sublist3r.txt")
+	
 	hosts = filter_hosts(hosts)
 
 	if len(hosts) == 0:
