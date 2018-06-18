@@ -85,8 +85,8 @@ def main():
 	#hosts = read_hosts("hosts.json")
 	#hosts = read_hosts2("subfinder.json")
 	#hosts = read_hosts4("subfinder-18-05-23.txt")
-	hosts = read_hosts4("subfinder-18-06-07.txt")
-	#hosts = read_hosts3("massdns-18-06-03.txt")
+	#hosts = read_hosts4("services.txt")
+	hosts = read_hosts3("massdns-18-06-16.txt")
 
 	if args.whitelist:
 	    hosts = whitelist_hosts(hosts, whitelist)

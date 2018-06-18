@@ -35,6 +35,7 @@ BLACKLIST_MD5 = ['19808e464563a3f91bfcbb24abd3da14',
                 '0b1770cfb0a0eeb991cf9877c750add4',
                 'ea1b9d80fc5181466257cd31016b8f12',
                 '10c03357095165d318ac8031a47c49f3',
+                'bee5acbbc5e20ab8b0b6a3078cb8d9e3',
                 '444bcb3a3fcf8389296c49467f27e1d6']
 
 def scan_host(report_dir, schema, host):
@@ -49,16 +50,20 @@ def scan_host(report_dir, schema, host):
     sess = wfuzz.get_session(' '.join(w))
     sess.hh=['BBB']
     if options.waf:
-        sess.headers = [('X-Originating-IP', '127.0.0.1'),
+        h = [('X-Originating-IP', '127.0.0.1'),
                     ('X-Forwarded-For', '127.0.0.1'),
                     ('X-Remote-IP', '127.0.0.1'),
                     ('X-Remote-Addr', '127.0.0.1'),
                     ('Accept', '*/*'),
-                    ('Authorization','Bearer ya29.c.ElnHBUhrOQqPxqadH8AFTZrvWChtMUmNfd-Hmmdoblnl7OO5SXId7D2TQVCajLsTyqfrUr1FxJpFLETEORnkEMZgGQ-_dwoA6j7q2VuzGFzr-YsKBW1KzJg5JQ'),
+                    ('referer', 'console.cloud.google.com'),
+                    #('Authorization','Bearer ya29.c.ElrWBQ_oedxlca0Ikg0PRlQpUi3LbwiH-r_xl9i--7PoFJcE2akdjAV-WRNC7dhI1DJakexWHGmIoxZLheuEW_LjH8Quxw2hsRHRVk5uM9hYIIB0ws0xpjMaJPc'),
                     ('Content-Type',  'application/json')]
+    else:
+        h = []
 
     url = schema+host+payload
-    for res in sess.fuzz(scanmode=True,url=url):
+    for res in sess.fuzz(scanmode=True,url=url,headers=h):
+        #print(res.history.headers.request)
         if res.code == -1:
             if res.is_baseline:
                 sess.close()
@@ -166,11 +171,12 @@ def save_results_json(report_dir):
 def main():
     go_home(options.domain)
     report_dir = setup_report_dir("dirbuster")
+    print("Report Path: %s", report_dir.absolute())
 
     #hosts = read_hosts("hosts.json")
     #hosts = read_hosts2("subfinder.json")
-    #hosts = read_hosts3("massdns-18-06-03.txt")
-    hosts = read_hosts4("sublist3r.txt")
+    #hosts = read_hosts3("massdns-18-06-16.txt")
+    hosts = read_hosts4("project_name.txt")
 
     print("Brute forcing for domain: %s", options.domain)
     print("Number(s) of url: %d",len(hosts))

@@ -78,7 +78,7 @@ def main():
 	#hosts = read_hosts("hosts.json")
 	#hosts = read_hosts2("subfinder.json")
 	#hosts = read_hosts4("subfinder.txt")
-	hosts = read_hosts4("subfinder-18-06-01.txt")
+	hosts = read_hosts4("subfinder-18-06-16.txt")
 	#hosts = read_hosts4("sublist3r.txt")
 	
 	hosts = filter_hosts(hosts)
