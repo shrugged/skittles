@@ -34,7 +34,7 @@ def check_url(url):
         return False
 
 # aquatone discover
-def read_hosts(filename):
+def read_hosts4(filename):
     if os.path.isfile(filename):
         with open(filename) as h:
             hosts = json.load(h).keys()
@@ -67,7 +67,7 @@ def read_hosts3(filename):
     return hosts
 
 #host per line
-def read_hosts4(filename):
+def read_hosts(filename):
     hosts = []
     if os.path.isfile(filename):
         with open(filename) as content:

@@ -55,7 +55,7 @@ def write_host_results(report_dir, host, r):
 def brute_force(filename):
 	#h = [("Host", host)]
 	found = 0
-	with wfuzz.FuzzSession(scanmode=True,url="FUZZ",hc=[404,301,302,'XXX','-01'], payloads=[("file",dict(fn=str(filename)))], printer=(filename+".out", "csv")) as sess:
+	with wfuzz.FuzzSession(scanmode=True,url="FUZZ",hc=[404,301,302,'XXX','-01'], method="POST", data="{}", payloads=[("file",dict(fn=str(filename)))], printer=(filename+".post.out", "csv")) as sess:
 		for r in sess.fuzz():
 			found += 1
 			print r
@@ -86,7 +86,7 @@ def main():
 	#hosts = read_hosts2("subfinder.json")
 	#hosts = read_hosts4("subfinder-18-05-23.txt")
 	#hosts = read_hosts4("services.txt")
-	hosts = read_hosts3("massdns-18-06-16.txt")
+	hosts = read_hosts3("massdns-18-06-24.txt")
 
 	if args.whitelist:
 	    hosts = whitelist_hosts(hosts, whitelist)

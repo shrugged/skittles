@@ -27,6 +27,9 @@ import itertools
 from wt_utils import *
 import requests
 
+from urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
 logging.basicConfig(level=logging.CRITICAL)
 
 parser = argparse.ArgumentParser()
@@ -86,6 +89,7 @@ def brute_force(input_file):
                 print(colored(r.description, "red"))
                 results.append(r.description)
             elif r.code == 200:
+                print(r.history.raw_content)
                 print(colored(r.description, "blue"))
                 results.append(r.description)
             elif r.code == 400:
@@ -113,9 +117,8 @@ def brute_force(input_file):
                 except requests.exceptions:
                     pass
 
-
             if r.code != 400 and r.code != -1:
-                t = requests.get("https://" + r.description + ".appspot.com")
+                t = requests.get("https://" + r.description) #+ ".appspot.com")
                 if not t.status_code == 404:
                     print("Get https://" + str(r.description) + ".appspot.com: %s",  t.status_code)
 

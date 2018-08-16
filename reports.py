@@ -10,6 +10,9 @@ import json
 
 WFUZZ_REPORTS_DIR = os.environ['HOME'] + "/.wfuzz/reports"
 
+import hashlib
+m = hashlib.md5()
+
 def mkdir_p(path):
     """ 'mkdir -p' in Python """
     try:
@@ -20,10 +23,12 @@ def mkdir_p(path):
         else:
             raise
 
+
 def write_raw_content(f, content):
-    	with open(f, "w") as f:
-    		#print("writelines: %s", name)
-    		f.writelines(content)
+    with open(f, "w") as f:
+        #print("writelines: %s", name)
+        f.writelines(content)
+
 
 @moduleman_plugin
 class reports(BasePlugin):
@@ -41,23 +46,34 @@ class reports(BasePlugin):
         BasePlugin.__init__(self)
         date_dir = time.strftime('%y-%m-%d')
         date_dir += "-"
-        date_dir += ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        date_dir += ''.join(random.choice(string.ascii_lowercase +
+                                          string.digits) for _ in range(6))
         self.reports_dir = WFUZZ_REPORTS_DIR + "/" + date_dir + "/"
         mkdir_p(self.reports_dir)
         self.l = dict()
+        print("Report dir is at: ", self.reports_dir)
 
     def __del__(self):
-    	with open(self.reports_dir + "report.json", 'w') as fp:
-    		json.dump(self.l, fp)
+        print("Report dir is at: ", self.reports_dir)
+        with open(self.reports_dir + "report.json", 'w') as fp:
+            json.dump(self.l, fp)
 
     def validate(self, fuzzresult):
         return True
 
     def process(self, fuzzresult):
-    	file_name = self.reports_dir + fuzzresult.md5
-    	host = fuzzresult.history.headers.request['Host']
-    	if not host in self.l:
-    		self.l[host] = dict()
-    	self.l[host].update({fuzzresult.description : fuzzresult.md5})
-    	write_raw_content(file_name, fuzzresult.history.raw_content)
-    	
+    	#rint(vars(fuzzresult))
+    	#print(fuzzresult.md5)
+    	m = hashlib.md5()
+    	m.update(fuzzresult.history.content)
+    	md5 = m.hexdigest()
+    	#print(md5)
+        if md5:
+            file_name = self.reports_dir + md5
+            host = fuzzresult.history.headers.request['Host']
+            if host not in self.l:
+                self.l[host] = dict()
+            self.l[host].update({fuzzresult.description: md5})
+
+            if not os.path.isfile(file_name):
+            	write_raw_content(file_name, fuzzresult.history.raw_content)

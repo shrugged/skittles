@@ -1,20 +1,16 @@
 #!/usr/bin/env python2
 
 import json
-import wfuzz
-import argparse
-from unipath import Path
 import sys
+import argparse
 import os
 import string
-from random import *
-import re
 import time
-import signal
+import sys
+from random import randint, choice
 from fuzzywuzzy import fuzz
-import random
-from urlparse import urlparse
-import httplib, sys
+from unipath import Path
+import wfuzz
 
 from wt_utils import *
 
@@ -22,21 +18,22 @@ ALL_CHARS = string.ascii_letters + string.digits
 
 parser = argparse.ArgumentParser(description='Bruteforce webservers')
 parser.add_argument('--domain', required='True')
-parser.add_argument('--verbose',action='store_true')
-parser.add_argument('--blacklist',action='append')
-parser.add_argument('--whitelist',action='append')
-parser.add_argument('--waf',action='store_true', default=True)
-parser.add_argument('--fuzzy',default=100)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--blacklist', action='append')
+parser.add_argument('--whitelist', action='append')
+parser.add_argument('--waf', action='store_true', default=True)
+parser.add_argument('--fuzzy', default=100)
+parser.add_argument('--hosts', default="subfinder-18-06-26.txt")
 
 options, w = parser.parse_known_args()
 
 BLACKLIST_MD5 = ['19808e464563a3f91bfcbb24abd3da14',
-                'c6b760e6b0be68f648b223590f8ceb8e',
-                '0b1770cfb0a0eeb991cf9877c750add4',
-                'ea1b9d80fc5181466257cd31016b8f12',
-                '10c03357095165d318ac8031a47c49f3',
-                'bee5acbbc5e20ab8b0b6a3078cb8d9e3',
-                '444bcb3a3fcf8389296c49467f27e1d6']
+                 'c6b760e6b0be68f648b223590f8ceb8e',
+                 '0b1770cfb0a0eeb991cf9877c750add4',
+                 'ea1b9d80fc5181466257cd31016b8f12',
+                 '10c03357095165d318ac8031a47c49f3',
+                 'bee5acbbc5e20ab8b0b6a3078cb8d9e3',
+                 '444bcb3a3fcf8389296c49467f27e1d6']
 
 def scan_host(report_dir, schema, host):
     baseline = {}
@@ -55,14 +52,13 @@ def scan_host(report_dir, schema, host):
                     ('X-Remote-IP', '127.0.0.1'),
                     ('X-Remote-Addr', '127.0.0.1'),
                     ('Accept', '*/*'),
-                    ('referer', 'console.cloud.google.com'),
-                    #('Authorization','Bearer ya29.c.ElrWBQ_oedxlca0Ikg0PRlQpUi3LbwiH-r_xl9i--7PoFJcE2akdjAV-WRNC7dhI1DJakexWHGmIoxZLheuEW_LjH8Quxw2hsRHRVk5uM9hYIIB0ws0xpjMaJPc'),
+                    ('referer', 'google.com'),
                     ('Content-Type',  'application/json')]
     else:
         h = []
 
     url = schema+host+payload
-    for res in sess.fuzz(scanmode=True,url=url,headers=h):
+    for res in sess.fuzz(scanmode=True, url=url, headers=h):
         #print(res.history.headers.request)
         if res.code == -1:
             if res.is_baseline:
@@ -114,7 +110,7 @@ def filter_url(baseline, prev, res):
     elif (res.words == baseline.words and \
            res.chars == baseline.chars and \
            res.lines == baseline.lines):
-            return False
+        return False
     elif res.md5 == baseline.md5:
         return False
     elif res.md5 in BLACKLIST_MD5:
@@ -134,7 +130,7 @@ def filter_url(baseline, prev, res):
         return False
     elif res.history.headers.response.get("Server") == "AmazonS3":
         return False
-    
+
     return True
 
 def process_url(res):
@@ -145,9 +141,8 @@ def process_url(res):
         "lines": res.lines,
         "words": res.words,
         "nres": res.nres,
-       # "md5": res.md5,
-        "method": res.history._request.method,
-        "schema": res.history._request.schema
+        "method": res.history.request.method,
+        "schema": res.history.request.schema
     }
 
     if res.plugins_res:
@@ -156,7 +151,7 @@ def process_url(res):
 
     if options.debug:
         res_entry['debug'] = res.history.raw_content
-    
+
     if 'Server' in res.history.headers.response:
         res_entry['server'] = res.history.headers.response['Server']
     if 'Location' in res.history.headers.response:
@@ -164,23 +159,16 @@ def process_url(res):
 
     return res_entry
 
-def save_results_json(report_dir):
-    with open(output, 'w') as outfile:
-        json.dump(results, outfile)
-
 def main():
     go_home(options.domain)
     report_dir = setup_report_dir("dirbuster")
     print("Report Path: %s", report_dir.absolute())
 
-    #hosts = read_hosts("hosts.json")
-    #hosts = read_hosts2("subfinder.json")
-    #hosts = read_hosts3("massdns-18-06-16.txt")
-    hosts = read_hosts4("project_name.txt")
+    hosts = read_hosts(options.hosts)
 
     print("Brute forcing for domain: %s", options.domain)
     print("Number(s) of url: %d",len(hosts))
-    
+
     options.time = time.time()
     #results['options'] = vars(options)
 
@@ -207,7 +195,7 @@ def main():
                     print("Error connecting to host : %s", host)
                     continue
 
-            
+
 
         except KeyboardInterrupt:
             print("CTRL+C detected.")
@@ -224,4 +212,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
